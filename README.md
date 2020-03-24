@@ -21,7 +21,7 @@ AdvancedRunner: More funcitons are added to the game, including:
 
 ReplayRunner: Class to display a replay
 
-Examples are in run.ipynb
+**Examples are in run.ipynb**
 
 TODO
 - GraphicUI
