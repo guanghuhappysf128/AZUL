@@ -7,3 +7,21 @@ Some information about the game:
 - https://en.wikipedia.org/wiki/Azul_(board_game)
 - https://boardgamegeek.com/boardgame/230802/azul
 - https://www.planbgames.com/en/news/azul-c16.html
+
+Extra package required:
+- numpy
+- func_timeout
+- tqdm
+
+AdvancedRunner: More funcitons are added to the game, including:
+- timelimit for each step, defined by parameter time_limit
+- timeout warnings, player consider fail for too many timeouts, limit defined by parameter warning_limit
+- allow different displayer
+- replay system, Run function will return all required information for ReplayRunner
+
+ReplayRunner: Class to display a replay
+
+Examples are in run.ipynb
+
+TODO
+- GraphicUI
