@@ -26,7 +26,9 @@ class AdvanceGameRunner:
         self.time_limit = time_limit
         self.warning_limit = warning_limit
         self.warnings = [0]*len(player_list)
+        # self.displayer = GameDisplayer(player_list)
         self.displayer = displayer
+        self.displayer.InitDisplayer(self)
 
     def Run(self):
         player_order = []
@@ -39,6 +41,8 @@ class AdvanceGameRunner:
         game_continuing = True
         for plr in self.game_state.players:
             plr.player_trace.StartRound()
+        
+        self.displayer.DisplayState(self.game_state)
 
         while game_continuing:
             for i in player_order:
@@ -76,10 +80,10 @@ class AdvanceGameRunner:
                 continue
 
             # It is the end of round
-            if self.displayer is not None:
-                self.displayer.EndRound()
-
             self.game_state.ExecuteEndOfRound()
+
+            if self.displayer is not None:
+                self.displayer.EndRound(self.game_state)
 
             # Is it the end of the game? 
             for i in player_order:

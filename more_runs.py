@@ -13,21 +13,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
-from model import GameRunner,Player
+# from model import GameRunner,Player
+from advance_model import AdvanceGameRunner,Player
 from iplayer import InteractivePlayer
 from naive_player import NaivePlayer
 from utils import *
 
-players = [InteractivePlayer(0), NaivePlayer(1), NaivePlayer(2),NaivePlayer(3)]
+# players = [InteractivePlayer(0), NaivePlayer(1), NaivePlayer(2),NaivePlayer(3)]
+players = [InteractivePlayer(0), NaivePlayer(1)]
 
-gr = GameRunner(players, 1384754856864)
-
-activity = gr.Run(True)
+# gr = GameRunner(players, 1384754856864)
+gr = AdvanceGameRunner(players)
+gr.time_limit = None
+activity = gr.Run()
 
 print("Player 0 score is {}".format(activity[0][0]))
 print("Player 1 score is {}".format(activity[1][0]))
-print("Player 2 score is {}".format(activity[2][0]))
-print("Player 3 score is {}".format(activity[3][0]))
+
+# print("Player 2 score is {}".format(activity[2][0]))
+# print("Player 3 score is {}".format(activity[3][0]))
 
 
 #print("Player 0 round-by-round activity")
