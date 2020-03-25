@@ -9,6 +9,7 @@ Some information about the game:
 - https://www.planbgames.com/en/news/azul-c16.html
 
 ***Advanced version***
+***Please use the Example.ipynb to start***
 
 **Extra function**
 - timeout limit
