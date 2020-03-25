@@ -8,20 +8,25 @@ Some information about the game:
 - https://boardgamegeek.com/boardgame/230802/azul
 - https://www.planbgames.com/en/news/azul-c16.html
 
-Extra package required:
+##Advanced version
+
+###Extra function
+- timeout limit
+- timeout warning and fail
+- replay system
+- GUI displayer (allow switch)
+
+###Extra package required:
 - numpy
 - func_timeout
 - tqdm
 
-AdvancedRunner: More funcitons are added to the game, including:
-- timelimit for each step, defined by parameter time_limit
-- timeout warnings, player consider fail for too many timeouts, limit defined by parameter warning_limit
-- allow different displayer
-- replay system, Run function will return all required information for ReplayRunner
+###class and parameters
+####AdvancedRunner
+Runner with timelimit, timeout warnings, displayer, replay system. It returns a replay file.
 
-ReplayRunner: Class to display a replay
+####ReplayRunner
+Use replay file to unfold a replay
 
-**Examples are in Example.ipynb**
-
-TODO
-- GraphicUI
+####GUIGameDisplayer
+GUI game displayer, you coud click items in the list box and use arrow keys to select move.

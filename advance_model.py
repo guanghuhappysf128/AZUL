@@ -1,3 +1,12 @@
+
+#- args player_list, list of players
+#- args seed, random seed used
+#- args time_limit, time limit for each step, None for inf time
+#- args warning_limit, timeout warnings 
+#- args displayer, TextGameDisplayer, GUIDisplayer or None
+#- args players_namelist, name to display
+#- return replay, a dict
+
 from model import *
 
 from displayer import *
@@ -7,7 +16,7 @@ import time
 
     
 class AdvanceGameRunner:
-    def __init__(self, player_list, seed=1, time_limit=1, warning_limit=3, displayer = None):
+    def __init__(self, player_list, seed=1, time_limit=1, warning_limit=3, displayer = None, players_namelist = ["Alice","Bob"]):
         random.seed(seed)
 
         # Make sure we are forming a valid game, and that player
@@ -22,7 +31,7 @@ class AdvanceGameRunner:
 
         self.game_state = GameState(len(player_list))
         self.players = player_list
-        self.players_namelist = ["Alice","Bob"]
+        self.players_namelist = players_namelist
         self.seed = seed
         self.time_limit = time_limit
         self.warning_limit = warning_limit
@@ -63,7 +72,9 @@ class AdvanceGameRunner:
                     print ( "Player {} Time Out, {} out of {}.".format(i,self.warnings[i],self.warning_limit))
                     if self.warnings[i] == self.warning_limit:
                         print("Player {} fails, too many time outs.".format(i))
-                        return None
+                        player_traces = {i:[0,] for i,plr in enumerate(self.game_state.players)}
+                        player_traces[i][0] = -1
+                        return player_traces
                     
                     selected = random.choice(moves)
                     
@@ -111,7 +122,10 @@ class AdvanceGameRunner:
                     self.displayer.StartRound(self.game_state)
 
         # Score player bonuses
-        player_traces = {"seed":self.seed,"player_num":len(player_order)}
+        player_traces = {"seed":self.seed,
+                         "player_num":len(player_order),
+                         "players_namelist":self.players_namelist}
+
         for i in player_order:
             plr_state = self.game_state.players[i]
             plr_state.EndOfGameScore()
@@ -130,6 +144,7 @@ class ReplayRunner:
         
         random.seed(self.replay["seed"])
         self.player_num = self.replay["player_num"]
+        self.players_namelist = replay["players_namelist"]
         self.game_state = GameState(self.player_num)
 
         self.displayer = displayer
