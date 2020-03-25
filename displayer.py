@@ -10,10 +10,10 @@ class GameDisplayer:
     def InitDisplayer(self,runner):
         pass
             
-    def ExcuteMove(self,i,move,plr_state):
+    def ExcuteMove(self,i,move,game_state):
         pass
     
-    def DisplayState(self,state):
+    def DisplayState(self,game_state):
         pass
     
     def EndRound(self):
@@ -23,8 +23,8 @@ class GameDisplayer:
         pass
 
 class GUIGameDisplayer(GameDisplayer):
-    # def __init__(self):
-    #     pass
+    def __init__(self,delay = 1):
+        self.delay = delay
 
     def InitDisplayer(self,runner):
         self.root = tkinter.Tk()
@@ -58,8 +58,14 @@ class GUIGameDisplayer(GameDisplayer):
         self.fb_frame = tkinter.Frame(self.root)
         self.fb_frame.grid(row=0,column=0,rowspan=3,sticky=tkinter.W+tkinter.E)
 
-        self.ft_num = [[tkinter.StringVar(self.root),tkinter.StringVar(self.root),tkinter.StringVar(self.root),tkinter.StringVar(self.root),tkinter.StringVar(self.root)],[tkinter.StringVar(self.root),tkinter.StringVar(self.root),tkinter.StringVar(self.root),tkinter.StringVar(self.root),tkinter.StringVar(self.root)],[tkinter.StringVar(self.root),tkinter.StringVar(self.root),tkinter.StringVar(self.root),tkinter.StringVar(self.root),tkinter.StringVar(self.root)],[tkinter.StringVar(self.root),tkinter.StringVar(self.root),tkinter.StringVar(self.root),tkinter.StringVar(self.root),tkinter.StringVar(self.root)],[tkinter.StringVar(self.root),tkinter.StringVar(self.root),tkinter.StringVar(self.root),tkinter.StringVar(self.root),tkinter.StringVar(self.root)],[tkinter.StringVar(self.root),tkinter.StringVar(self.root),tkinter.StringVar(self.root),tkinter.StringVar(self.root),tkinter.StringVar(self.root),tkinter.StringVar(self.root)]]
+        self.ft_num = []
+        for i in range(5):
+            self.ft_num.append([tkinter.StringVar() for _ in range(5)])
+        self.ft_num.append([tkinter.StringVar() for _ in range(6)])
 
+        for row in self.ft_num:
+            for var in row:
+                var.set("0") 
         
         for i in range(5):
             factory = display_utils.BoardFactory(i)
@@ -71,15 +77,17 @@ class GUIGameDisplayer(GameDisplayer):
         self.cf_board.factory_displayer = tkinter.Frame(self.fb_frame,highlightbackground="red", highlightcolor="red", highlightthickness=3,width=240, height = 70) 
         self.cf_board.factory_displayer.grid(row=5,column=1)
         self._GenerateFactory(self.cf_board,5,6)
-        self.ft_num[5][5].set("0")
 
         self.move_box=tkinter.Listbox(self.root,name="moves:", height=36, width=88, selectmode="single", borderwidth=4)
         self.move_box.grid(row=0, column=3, rowspan=3, sticky=tkinter.N+tkinter.E)
+        
+        self.move_box.insert(tkinter.END,"End of round")
 
-        # pb2.display_board.create_image(pb2.playing_board[0].tiles[0].x,pb2.playing_board[0].tiles[0].y, anchor=tkinter.NW, image=blue_tile_img)
+        #pb2.display_board.create_image(pb2.playing_board[0].tiles[0].x,pb2.playing_board[0].tiles[0].y, anchor=tkinter.NW, image=blue_tile_img)
+
+        #self.root.mainloop()
 
 
-        # self.root.mainloop()
     def _GenerateFactory(self,parent,index,size):
         
         for j in range(size):
@@ -91,23 +99,22 @@ class GUIGameDisplayer(GameDisplayer):
             m = tkinter.Canvas(tf, width=35, height=15)
             m.create_image(10,0, anchor=tkinter.NW, image=self.m_img) 
             m.grid(row=1,column=0)
-            v = tkinter.StringVar(self.root)
-            parent.tile_num.append(v)
-            parent.tile_num[j].set("0")
-            num = tkinter.Label(tf,text=self.ft_num[index][j],borderwidth=4,relief=tkinter.SUNKEN)
+            num = tkinter.Label(tf,textvariable=self.ft_num[index][j],borderwidth=4,relief=tkinter.SUNKEN)
             num.grid(row=2,column=0)
-            parent.tile_displayer.append(tf)
-            
-            
-            parent.tile_num_displayer.append(num)
+
+
+            #parent.tile_displayer.append(tf)
+            #parent.tile_num_displayer.append(num)
     
 
-    def ExcuteMove(self,player_id,move, plr_state):
+    def ExcuteMove(self,player_id,move, game_state):
+
+        plr_state = game_state.players[player_id]
         
         center = move[0]
         factory_id = move[1]
         movement = move[2]
-        print(movement.num_to_pattern_line)
+        #print(movement.num_to_pattern_line)
         if movement.num_to_pattern_line > 0:
             self._UpdateLine(movement.num_to_pattern_line,self.player_board[player_id],movement.pattern_line_dest,movement.tile_type)
 
@@ -119,8 +126,27 @@ class GUIGameDisplayer(GameDisplayer):
             self._UpdateLine(movement.num_to_floor_line,self.player_board[player_id],5,6)
 
         self.move_box.insert(tkinter.END,MoveToString(player_id,move))
-        time.sleep(1)
+
+        self._UpdateFactory(game_state)
+        time.sleep(self.delay)
         pass
+
+    def _InsertMessage(self,game_state,flag):
+        if flag:
+            self.game_state_history.append(game_state.copy)
+        
+
+    def _UpdateFactory(self,game_state):
+        for i in range(5):
+            # tile num by factory
+            for j in range(5):
+                self.ft_num[j][i].set(str(game_state.factories[j].tiles[i]))
+            self.ft_num[5][i].set(str(game_state.centre_pool.tiles[i]))
+
+        if game_state.next_first_player!=-1:
+            self.ft_num[5][5].set("0")
+        else:
+            self.ft_num[5][5].set("1")
 
     def _DisplayLine(self,i,pb,bl,tt):
         x=0
@@ -164,19 +190,19 @@ class GUIGameDisplayer(GameDisplayer):
                     tt = tt + 5
                 t.content = pb.display_board.create_image(t.x,t.y, anchor=tkinter.NW, image=self.tile_images[tt])
                 pb.display_board.update()
-        time.sleep(0.5)
+        time.sleep(self.delay/2)
     
-    def DisplayState(self,state):
+    def DisplayState(self,game_state):
 
         # update player board one by one
-        for _,(ps,pb) in enumerate(zip(state.players,self.player_board)):
+        for _,(ps,pb) in enumerate(zip(game_state.players,self.player_board)):
 
             # update playing board 
             for i in range(ps.GRID_SIZE):
                 self._DisplayLine(ps.lines_number[i],pb,i,ps.lines_tile[i])
             
             # update floor line
-            if state.next_first_player != -1:
+            if game_state.next_first_player != -1:
                 self._DisplayLine(1,pb,5,5)
             else:
                  self._DisplayLine(0,pb,5,5)
@@ -205,24 +231,24 @@ class GUIGameDisplayer(GameDisplayer):
 
 
         # update factories by tile type
-        for i in range(5):
-            # tile num by factory
-            for j in range(5):
-                self.board_factories[j].tile_num[i].set(str(state.factories[j].tiles[i]))
-            self.cf_board.tile_num[i] = state.centre_pool.tiles[i]
-        
-        if state.next_first_player!=-1:
-            self.cf_board.tile_num[5].set("0")
-        pass
+        self._UpdateFactory(game_state)
+
     
-    def EndRound(self,state):
-        # time.sleep(1000)
+    def EndRound(self,game_state):
         self.center_token = True
-        self.DisplayState(state)
+        self.DisplayState(game_state)
+        self.move_box.insert(tkinter.END,"End of round")
+        self.move_box.insert(tkinter.END,"")
         pass
     
     def EndGame(self,game_state):
-        time.sleep(1000)
+        #time.sleep(1000)
+        self.move_box.insert(tkinter.END,"")
+
+        for i,plr_state in enumerate(game_state.players):
+            self.move_box.insert(tkinter.END,"Score for Player {}: {}".format(i,plr_state.score))
+    
+        self.root.mainloop()
         pass    
 
 class TextGameDisplayer(GameDisplayer):
@@ -233,7 +259,8 @@ class TextGameDisplayer(GameDisplayer):
     def InitDisplayer(self,runner):
         pass
     
-    def ExcuteMove(self,i,move, plr_state):
+    def ExcuteMove(self,i,move, game_state):
+        plr_state = game_state.players[i]
         print("\nPlayer {} has chosen the following move:".format(i))
         print(MoveToString(i, move))
         print("\n")

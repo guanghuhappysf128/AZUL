@@ -26,9 +26,10 @@ class AdvanceGameRunner:
         self.time_limit = time_limit
         self.warning_limit = warning_limit
         self.warnings = [0]*len(player_list)
-        # self.displayer = GameDisplayer(player_list)
         self.displayer = displayer
-        self.displayer.InitDisplayer(self)
+        
+        if self.displayer is not None:
+            self.displayer.InitDisplayer(self)
 
     def Run(self):
         player_order = []
@@ -41,8 +42,9 @@ class AdvanceGameRunner:
         game_continuing = True
         for plr in self.game_state.players:
             plr.player_trace.StartRound()
-        
-        self.displayer.DisplayState(self.game_state)
+                
+        if self.displayer is not None:
+            self.displayer.DisplayState(self.game_state)
 
         while game_continuing:
             for i in player_order:
@@ -70,7 +72,7 @@ class AdvanceGameRunner:
                 self.game_state.ExecuteMove(i, selected)
 
                 if self.displayer is not None:
-                    self.displayer.ExcuteMove(i,selected, plr_state)
+                    self.displayer.ExcuteMove(i,selected, self.game_state)
                     
                 if not self.game_state.TilesRemaining():
                     break
@@ -122,11 +124,14 @@ class AdvanceGameRunner:
 class ReplayRunner:
     def __init__(self,replay, displayer = None):
         self.replay = replay
-        self.displayer = displayer
         
         random.seed(self.replay["seed"])
         self.player_num = self.replay["player_num"]
         self.game_state = GameState(self.player_num)
+
+        self.displayer = displayer
+        if self.displayer is not None:
+            self.displayer.InitDisplayer(self)
   
     def Run(self):
         player_order = []
@@ -142,6 +147,9 @@ class ReplayRunner:
         
         round_count = 0
         move_count = 0
+        
+        if self.displayer is not None:
+            self.displayer.DisplayState(self.game_state)
 
         while game_continuing:
             for i in player_order:
@@ -153,7 +161,7 @@ class ReplayRunner:
                 self.game_state.ExecuteMove(i, selected)
 
                 if self.displayer is not None:
-                    self.displayer.ExcuteMove(i,selected, plr_state)
+                    self.displayer.ExcuteMove(i,selected, self.game_state)
                     
                 if not self.game_state.TilesRemaining():
                     break
@@ -164,9 +172,9 @@ class ReplayRunner:
                 continue
 
             # It is the end of round
-            if self.displayer is not None:
-                self.displayer.EndRound()
             self.game_state.ExecuteEndOfRound()
+            if self.displayer is not None:
+                self.displayer.EndRound(self.game_state)
 
             # Is it the end of the game? 
             for i in player_order:
@@ -188,6 +196,10 @@ class ReplayRunner:
 
                 for i in range(0, self.game_state.first_player):
                     player_order.append(i)
+
+                if self.displayer is not None:
+                    self.displayer.DisplayState(self.game_state)
+                
                 
 
         # Score player bonuses
