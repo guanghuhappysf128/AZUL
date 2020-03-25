@@ -22,6 +22,7 @@ class AdvanceGameRunner:
 
         self.game_state = GameState(len(player_list))
         self.players = player_list
+        self.players_namelist = ["Alice","Bob"]
         self.seed = seed
         self.time_limit = time_limit
         self.warning_limit = warning_limit
@@ -42,9 +43,9 @@ class AdvanceGameRunner:
         game_continuing = True
         for plr in self.game_state.players:
             plr.player_trace.StartRound()
-                
+
         if self.displayer is not None:
-            self.displayer.DisplayState(self.game_state)
+            self.displayer.StartRound(self.game_state)
 
         while game_continuing:
             for i in player_order:
@@ -106,6 +107,8 @@ class AdvanceGameRunner:
                 for i in range(0, self.game_state.first_player):
                     player_order.append(i)
                 
+                if self.displayer is not None:
+                    self.displayer.StartRound(self.game_state)
 
         # Score player bonuses
         player_traces = {"seed":self.seed,"player_num":len(player_order)}
@@ -144,12 +147,13 @@ class ReplayRunner:
         game_continuing = True
         for plr in self.game_state.players:
             plr.player_trace.StartRound()
-        
+            
+        if self.displayer is not None:
+            self.displayer.StartRound(self.game_state)
         round_count = 0
         move_count = 0
         
-        if self.displayer is not None:
-            self.displayer.DisplayState(self.game_state)
+
 
         while game_continuing:
             for i in player_order:
@@ -198,7 +202,7 @@ class ReplayRunner:
                     player_order.append(i)
 
                 if self.displayer is not None:
-                    self.displayer.DisplayState(self.game_state)
+                    self.displayer.StartRound(self.game_state)
                 
                 
 

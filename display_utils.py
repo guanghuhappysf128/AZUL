@@ -49,12 +49,14 @@ class BoardRow:
 
 
 class PlayerBoard:
-    def __init__(self, player_id, canvas):
+    def __init__(self, player_id, canvas, label):
         # Player ID
         self.player_id = player_id
+        self.player_name = ""
         self.display_board = canvas 
         self.playing_board = []
         self.scoring_board = []
+        self.naming = label
         
         for x in range(6):
             self.playing_board.append(BoardRow(x))

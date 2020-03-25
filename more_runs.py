@@ -15,8 +15,8 @@
 #
 # from model import GameRunner,Player
 from advance_model import AdvanceGameRunner,Player
-from iplayer import InteractivePlayer
-from naive_player import NaivePlayer
+from players.iplayer import InteractivePlayer
+from players.naive_player import NaivePlayer
 from utils import *
 
 # players = [InteractivePlayer(0), NaivePlayer(1), NaivePlayer(2),NaivePlayer(3)]

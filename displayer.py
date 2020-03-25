@@ -2,6 +2,7 @@ from utils import *
 import display_utils
 import tkinter
 import time
+import copy
 
 class GameDisplayer:
     def __init__(self):
@@ -13,10 +14,13 @@ class GameDisplayer:
     def ExcuteMove(self,i,move,game_state):
         pass
     
-    def DisplayState(self,game_state):
+    # def _DisplayState(self,game_state):
+    #     pass
+
+    def StartRound(self,game_state):
         pass
     
-    def EndRound(self):
+    def EndRound(self,game_state):
         pass
     
     def EndGame(self):
@@ -31,7 +35,8 @@ class GUIGameDisplayer(GameDisplayer):
         self.center_token = True
         self.root.title("AZUL assignment ------ COMP90054 AI Planning for Autononmy")
         self.root.iconbitmap("resources/azul_bpj_icon.ico")
-        self.root.geometry("1400x700")
+        self.root.geometry("1255x605")
+        self.root.resizable(width=False, height=False)
 
         self.tile_images = []
         self.tile_images.append(tkinter.PhotoImage(file="resources/blue_tile_mini.png"))
@@ -48,15 +53,20 @@ class GUIGameDisplayer(GameDisplayer):
         self.player_board = []
         # assert(len(player_list) == 2)
         for i in range(2):
-            pb1 = display_utils.PlayerBoard(i,tkinter.Canvas(self.root, width=405, height=265))
-            pb1.display_board.grid(row=i*2, column=1)
+            name=tkinter.StringVar()
+            name.set("Player "+str(runner.players_namelist[i])+": ")
+            pb1 = display_utils.PlayerBoard(i,tkinter.Canvas(self.root, width=405, height=265),tkinter.Entry(self.root, textvariable=name))
+            pb1.display_board.grid(row=i*2+1, column=1)
+            pb1.naming.grid(row=i*2,column=1)
             pb1.display_board.create_image(0,0, anchor=tkinter.NW, image=self.player_borad_img) 
+
             self.player_board.append(pb1)
+            
 
         self.board_factories = []
 
         self.fb_frame = tkinter.Frame(self.root)
-        self.fb_frame.grid(row=0,column=0,rowspan=3,sticky=tkinter.W+tkinter.E)
+        self.fb_frame.grid(row=0,column=0,rowspan=4,sticky=tkinter.W+tkinter.E)
 
         self.ft_num = []
         for i in range(5):
@@ -74,19 +84,37 @@ class GUIGameDisplayer(GameDisplayer):
             self._GenerateFactory(factory,i,5)
             self.board_factories.append(factory)
         self.cf_board = display_utils.BoardFactory(6)
-        self.cf_board.factory_displayer = tkinter.Frame(self.fb_frame,highlightbackground="red", highlightcolor="red", highlightthickness=3,width=240, height = 70) 
+        self.cf_board.factory_displayer = tkinter.Frame(self.fb_frame,highlightbackground="black", highlightcolor="black", highlightthickness=3,width=240, height = 70) 
         self.cf_board.factory_displayer.grid(row=5,column=1)
         self._GenerateFactory(self.cf_board,5,6)
-
-        self.move_box=tkinter.Listbox(self.root,name="moves:", height=36, width=88, selectmode="single", borderwidth=4)
-        self.move_box.grid(row=0, column=3, rowspan=3, sticky=tkinter.N+tkinter.E)
         
-        self.move_box.insert(tkinter.END,"End of round")
 
-        #pb2.display_board.create_image(pb2.playing_board[0].tiles[0].x,pb2.playing_board[0].tiles[0].y, anchor=tkinter.NW, image=blue_tile_img)
+        self.rf = tkinter.Frame(self.root)
+        self.rf.grid(row=0, column=4, rowspan=4, sticky=tkinter.N+tkinter.E)
 
-        #self.root.mainloop()
+        self.scrollbar = tkinter.Scrollbar(self.rf, orient=tkinter.VERTICAL)
 
+        self.move_box=tkinter.Listbox(self.rf,name="moves:", height=37, width=88, selectmode="single", borderwidth=4,yscrollcommand=self.scrollbar.set)
+        self.scrollbar.config(command=self.move_box.yview,troughcolor="white",bg="white")
+        self.scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
+        self.move_box.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=1)   
+        # self.move_box.configure(exportselection=False)
+        # self.move_box.configure(state=tkinter.DISABLED)
+
+        # self.move_box.grid(row=0, column=3, rowspan=3, sticky=tkinter.N+tkinter.E)
+
+        self.game_state_history=[]
+        self.round_num = 0
+
+        
+    def StartRound(self,game_state):
+        self._DisplayState(game_state)
+        self.game_state_history.append(copy.deepcopy(game_state))
+        self.round_num = self.round_num +1
+        self.move_box.insert(tkinter.END,"Start of round: "+str(self.round_num))
+        self.move_box.see(tkinter.END)
+        self.move_box.selection_clear(0, last=None) 
+        pass
 
     def _GenerateFactory(self,parent,index,size):
         
@@ -109,10 +137,6 @@ class GUIGameDisplayer(GameDisplayer):
 
     def ExcuteMove(self,player_id,move, game_state):
 
-        plr_state = game_state.players[player_id]
-        
-        center = move[0]
-        factory_id = move[1]
         movement = move[2]
         #print(movement.num_to_pattern_line)
         if movement.num_to_pattern_line > 0:
@@ -126,14 +150,33 @@ class GUIGameDisplayer(GameDisplayer):
             self._UpdateLine(movement.num_to_floor_line,self.player_board[player_id],5,6)
 
         self.move_box.insert(tkinter.END,MoveToString(player_id,move))
+        self.move_box.see(tkinter.END)
+        self.move_box.selection_clear(0, last=None) 
+        self.game_state_history.append(copy.deepcopy(game_state))
 
         self._UpdateFactory(game_state)
-        time.sleep(self.delay)
-        pass
 
-    def _InsertMessage(self,game_state,flag):
-        if flag:
-            self.game_state_history.append(game_state.copy)
+        
+        
+        # if move[0] ==2:
+        #     self.cf_board.factory_displayer.config(highlightbackground="red", highlightcolor="red")
+        #     # self.cf_board.factory_displayer.update()
+        #     # self.root.update_idletasks()
+        # else:
+        #     self.board_factories[move[1]].factory_displayer.config(highlightbackground="red", highlightcolor="red")
+        #     # self.board_factories[move[1]].factory_displayer.update()
+        #     # self.root.update_idletasks()
+ 
+        time.sleep(self.delay)
+
+        # self.cf_board.factory_displayer.config(highlightbackground="black", highlightcolor="black")
+        # # self.root.update_idletasks()
+        # # self.cf_board.factory_displayer.update()
+        # for x in self.board_factories:
+        #     x.factory_displayer.config(highlightbackground="black", highlightcolor="black")
+        #     # x.factory_displayer.update()
+        #     # self.root.update_idletasks()
+        # pass
         
 
     def _UpdateFactory(self,game_state):
@@ -190,9 +233,9 @@ class GUIGameDisplayer(GameDisplayer):
                     tt = tt + 5
                 t.content = pb.display_board.create_image(t.x,t.y, anchor=tkinter.NW, image=self.tile_images[tt])
                 pb.display_board.update()
-        time.sleep(self.delay/2)
+        # time.sleep(self.delay/2)
     
-    def DisplayState(self,game_state):
+    def _DisplayState(self,game_state):
 
         # update player board one by one
         for _,(ps,pb) in enumerate(zip(game_state.players,self.player_board)):
@@ -229,6 +272,8 @@ class GUIGameDisplayer(GameDisplayer):
             cells = [ps.grid_state[4][0],ps.grid_state[4][1],ps.grid_state[4][2],ps.grid_state[4][3],ps.grid_state[4][4]]
             self._UpdateScoringLine(pb,4,cells)
 
+            # time.sleep(self.delay/2)
+
 
         # update factories by tile type
         self._UpdateFactory(game_state)
@@ -236,20 +281,29 @@ class GUIGameDisplayer(GameDisplayer):
     
     def EndRound(self,game_state):
         self.center_token = True
-        self.DisplayState(game_state)
-        self.move_box.insert(tkinter.END,"End of round")
-        self.move_box.insert(tkinter.END,"")
+        self._DisplayState(game_state)
+        self.move_box.insert(tkinter.END,"--------------End of round-------------")
+        self.game_state_history.append(copy.deepcopy(game_state))
+        self.move_box.see(tkinter.END)
+        self.move_box.selection_clear(0, last=None) 
         pass
     
     def EndGame(self,game_state):
-        #time.sleep(1000)
-        self.move_box.insert(tkinter.END,"")
 
         for i,plr_state in enumerate(game_state.players):
             self.move_box.insert(tkinter.END,"Score for Player {}: {}".format(i,plr_state.score))
+            self.move_box.see(tkinter.END)
+        def OnHistorySelect(event):
+            w = event.widget
+            index = int(w.curselection()[0])
+            if index < len(self.game_state_history):
+                self._DisplayState(self.game_state_history[index])
+        self.move_box.bind('<<ListboxSelect>>', OnHistorySelect)
     
         self.root.mainloop()
         pass    
+
+
 
 class TextGameDisplayer(GameDisplayer):
     def __init__(self):
@@ -258,7 +312,10 @@ class TextGameDisplayer(GameDisplayer):
 
     def InitDisplayer(self,runner):
         pass
-    
+
+    def StartRound(self,game_state):
+        pass    
+
     def ExcuteMove(self,i,move, game_state):
         plr_state = game_state.players[i]
         print("\nPlayer {} has chosen the following move:".format(i))
@@ -269,8 +326,8 @@ class TextGameDisplayer(GameDisplayer):
         print(PlayerToString(i, plr_state))
         print ("--------------------------------------------------------------------")
         
-    def DisplayState(self,state):
-        pass
+    # def DisplayState(self,state):
+    #     pass
     
     def EndRound(self,state):
         print("ROUND HAS ENDED")

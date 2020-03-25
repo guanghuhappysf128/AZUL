@@ -1,6 +1,6 @@
 from advance_model import AdvanceGameRunner, ReplayRunner
-from naive_player import NaivePlayer
-from thinking_player import ThinkingPlayer
+from players.naive_player import NaivePlayer
+from players.thinking_player import ThinkingPlayer
 from displayer import TextGameDisplayer,GUIGameDisplayer
 from utils import *
 
