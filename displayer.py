@@ -85,8 +85,8 @@ class GUIGameDisplayer(GameDisplayer):
         # assert(len(player_list) == 2)
         for i in range(2):
             name=tkinter.StringVar()
-            name.set("Player "+str(runner.players_namelist[i])+": ")
-            pb1 = display_utils.PlayerBoard(i,tkinter.Canvas(self.pb_frame, width=405, height=265),tkinter.Entry(self.pb_frame, textvariable=name))
+            name.set("Player ("+str(i)+"): "+str(runner.players_namelist[i])+"")
+            pb1 = display_utils.PlayerBoard(i,tkinter.Canvas(self.pb_frame, width=405, height=265),tkinter.Entry(self.pb_frame, textvariable=name ,width=40))
             pb1.naming.grid(row=i*2,column=0)
             pb1.display_board.grid(row=i*2+1, column=0)
             pb1.display_board.create_image(0,0, anchor=tkinter.NW, image=self.player_borad_img) 
@@ -257,6 +257,10 @@ class GUIGameDisplayer(GameDisplayer):
 
     def TimeOutWarning(self,runner,id):
         self._InsertState("Player {} time out, {} out of {}".format(id, runner.warnings[id],runner.warning_limit),runner.game_state)
+        if id == 0:
+            self.move_box.itemconfig(tkinter.END, {'bg':'red','fg':'blue'})
+        else:
+            self.move_box.itemconfig(tkinter.END, {'bg':'blue','fg':'yellow'})
         pass
 
     

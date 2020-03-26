@@ -82,8 +82,12 @@ if __name__ == '__main__':
     #     args['display'] = textDisplay.NullGraphics()
     #     args['muteAgents'] = True
 
+    
     players_names.append(options.redName)
     players_names.append(options.blueName)
+    for i in range(2):
+        players_names[i] = players_names[i].replace(" ","_")
+
     random_seed = options.setRandomSeed
     warnning_time = options.warningTimeLimit
     num_of_warning = options.numOfWarnings

@@ -194,9 +194,10 @@ class ReplayRunner:
             for i in player_order:
 
                 if (i,round_count,move_count) in self.warning_positions:
+                    self.warnings[i]+=1
                     if self.displayer is not None:
                         self.displayer.TimeOutWarning(self,i)
-                    self.warnings[i]+=1
+                    
                     if self.warnings[i] == self.warning_limit:                        
                         self.game_state.players[i].score = -1
                         if self.displayer is not None:
