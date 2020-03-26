@@ -4,7 +4,7 @@ from utils import *
 
 import time
 
-class ThinkingPlayer(Player):
+class myPlayer(Player):
     def __init__(self,_id,thinking_time = 1):
         self.thinking_time = thinking_time
         super().__init__(_id)

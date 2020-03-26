@@ -13,9 +13,9 @@ class GameDisplayer:
             
     def ExcuteMove(self,i,move,game_state):
         pass
-    
-    # def _DisplayState(self,game_state):
-    #     pass
+
+    def TimeOutWarning(self,runner,id):
+        pass
 
     def StartRound(self,game_state):
         pass
@@ -27,7 +27,7 @@ class GameDisplayer:
         pass
 
 class GUIGameDisplayer(GameDisplayer):
-    def __init__(self,delay = 1):
+    def __init__(self,delay = 0.1):
         self.delay = delay
 
     def InitDisplayer(self,runner):
@@ -36,7 +36,7 @@ class GUIGameDisplayer(GameDisplayer):
         self.root.title("AZUL assignment ------ COMP90054 AI Planning for Autononmy")
         self.root.iconbitmap("resources/azul_bpj_icon.ico")
         self.root.geometry("1300x700")
-        #self.root.resizable(width=False, height=False)
+        # self.root.resizable(width=False, height=False)
 
         self.tile_images = []
         self.tile_images.append(tkinter.PhotoImage(file="resources/blue_tile_mini.png"))
@@ -119,7 +119,8 @@ class GUIGameDisplayer(GameDisplayer):
     def StartRound(self,game_state):
         self._DisplayState(game_state)
         self.round_num = self.round_num +1
-        self._InsertState("Start of round: "+str(self.round_num),game_state)
+        self._InsertState("~~~~~~~~~~~~~~~Start of round: "+str(self.round_num)+"~~~~~~~~~~~~~~~",game_state)
+        time.sleep(self.delay)
 
     def _InsertState(self,text,game_state):
         self.game_state_history.append(copy.deepcopy(game_state))
@@ -221,8 +222,6 @@ class GUIGameDisplayer(GameDisplayer):
             for i in range(5):
                 cells = [ps.grid_state[i][j] for j in range(5)]
                 self._UpdateScoringLine(pb,i,cells)
-
-        # time.sleep(self.delay/2)
         
         self._UpdateFactory(game_state)
 
@@ -244,20 +243,27 @@ class GUIGameDisplayer(GameDisplayer):
         self._InsertState(MoveToString(player_id,move),game_state)
 
         self._UpdateFactory(game_state)
-
+        
         time.sleep(self.delay)
+
+    def TimeOutWarning(self,runner,id):
+        self._InsertState("--------------End of round-------------",runner.game_state)
+        pass
 
     
     def EndRound(self,game_state):
         self.center_token = True
         self._DisplayState(game_state)
         self._InsertState("--------------End of round-------------",game_state)
+        for i,plr_state in enumerate(game_state.players):
+            self._InsertState("Current score for Player {}: {}".format(i,plr_state.score),game_state)
+        time.sleep(self.delay)
         pass
     
     def EndGame(self,game_state):
-
+        self._InsertState("--------------End of game-------------",game_state)
         for i,plr_state in enumerate(game_state.players):
-            self._InsertState("Score for Player {}: {}".format(i,plr_state.score),game_state)
+            self._InsertState("Final score with bonus for Player {}: {}".format(i,plr_state.score),game_state)
         
         self.focus = None
         def OnHistorySelect(event):

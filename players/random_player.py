@@ -5,7 +5,7 @@ from utils import *
 import time
 import random
 
-class RandomPlayer(Player):
+class myPlayer(Player):
     def __init__(self,_id):
         super().__init__(_id)
     

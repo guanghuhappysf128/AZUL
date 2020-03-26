@@ -16,7 +16,7 @@
 from model import *
 from utils import *
 
-class NaivePlayer(Player):
+class myPlayer(Player):
     def __init__(self, _id):
         super().__init__(_id)
 

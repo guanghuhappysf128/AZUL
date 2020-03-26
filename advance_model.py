@@ -74,6 +74,8 @@ class AdvanceGameRunner:
                         print("Player {} fails, too many time outs.".format(i))
                         player_traces = {i:[0,] for i,plr in enumerate(self.game_state.players)}
                         player_traces[i][0] = -1
+                        self.game_state.players[i].score = -1
+                        self.displayer.EndGame(self.game_state)
                         return player_traces
                     
                     selected = random.choice(moves)
@@ -141,7 +143,7 @@ class AdvanceGameRunner:
 class ReplayRunner:
     def __init__(self,replay, displayer = None):
         self.replay = replay
-        
+                    
         random.seed(self.replay["seed"])
         self.player_num = self.replay["player_num"]
         self.players_namelist = replay["players_namelist"]
