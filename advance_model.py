@@ -36,6 +36,7 @@ class AdvanceGameRunner:
         self.time_limit = time_limit
         self.warning_limit = warning_limit
         self.warnings = [0]*len(player_list)
+        self.warning_positions = []
         self.displayer = displayer
         
         if self.displayer is not None:
@@ -55,6 +56,9 @@ class AdvanceGameRunner:
 
         if self.displayer is not None:
             self.displayer.StartRound(self.game_state)
+            
+        round_count = 0
+        move_count = 0
 
         while game_continuing:
             for i in player_order:
@@ -69,13 +73,21 @@ class AdvanceGameRunner:
                     
                 except FunctionTimedOut:
                     self.warnings[i] += 1
-                    print ( "Player {} Time Out, {} out of {}.".format(i,self.warnings[i],self.warning_limit))
+                    if self.displayer is not None:
+                        self.displayer.TimeOutWarning(self,i)
+                    self.warning_positions.append((i,round_count,move_count))
+
                     if self.warnings[i] == self.warning_limit:
-                        print("Player {} fails, too many time outs.".format(i))
-                        player_traces = {i:[0,] for i,plr in enumerate(self.game_state.players)}
+                        player_traces = {"seed":self.seed,
+                                         "player_num":len(player_order),
+                                         "players_namelist":self.players_namelist,
+                                         "warning_positions":self.warning_positions,
+                                         "warning_limit":self.warning_limit}
+                        player_traces.update({id:[0, plr_state.player_trace] for id,plr_state in enumerate(self.game_state.players)})
                         player_traces[i][0] = -1
                         self.game_state.players[i].score = -1
-                        self.displayer.EndGame(self.game_state)
+                        if self.displayer is not None:
+                            self.displayer.EndGame(self.game_state)
                         return player_traces
                     
                     selected = random.choice(moves)
@@ -93,6 +105,7 @@ class AdvanceGameRunner:
 
             # Have we reached the end of round?
             if self.game_state.TilesRemaining():
+                move_count+=1
                 continue
 
             # It is the end of round
@@ -112,6 +125,8 @@ class AdvanceGameRunner:
 
             # Set up the next round
             if game_continuing:
+                round_count+=1
+                move_count=0
                 self.game_state.SetupNewRound()
                 player_order = []
                 for i in range(self.game_state.first_player,len(self.players)):
@@ -126,7 +141,9 @@ class AdvanceGameRunner:
         # Score player bonuses
         player_traces = {"seed":self.seed,
                          "player_num":len(player_order),
-                         "players_namelist":self.players_namelist}
+                         "players_namelist":self.players_namelist,
+                         "warning_positions":self.warning_positions,
+                         "warning_limit":self.warning_limit}
 
         for i in player_order:
             plr_state = self.game_state.players[i]
@@ -147,6 +164,9 @@ class ReplayRunner:
         random.seed(self.replay["seed"])
         self.player_num = self.replay["player_num"]
         self.players_namelist = replay["players_namelist"]
+        self.warning_limit = replay["warning_limit"]
+        self.warnings = [0]*self.player_num
+        self.warning_positions = replay["warning_positions"]
         self.game_state = GameState(self.player_num)
 
         self.displayer = displayer
@@ -170,10 +190,19 @@ class ReplayRunner:
         round_count = 0
         move_count = 0
         
-
-
         while game_continuing:
             for i in player_order:
+
+                if (i,round_count,move_count) in self.warning_positions:
+                    if self.displayer is not None:
+                        self.displayer.TimeOutWarning(self,i)
+                    self.warnings[i]+=1
+                    if self.warnings[i] == self.warning_limit:                        
+                        self.game_state.players[i].score = -1
+                        if self.displayer is not None:
+                            self.displayer.EndGame(self.game_state)
+                        return 
+
                 plr_state = self.game_state.players[i]
                 moves = plr_state.GetAvailableMoves(self.game_state)
                 selected = self.replay[i][1].moves[round_count][move_count]

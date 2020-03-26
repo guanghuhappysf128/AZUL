@@ -115,13 +115,6 @@ class GUIGameDisplayer(GameDisplayer):
         self.game_state_history=[]
         self.round_num = 0
 
-        
-    def StartRound(self,game_state):
-        self._DisplayState(game_state)
-        self.round_num = self.round_num +1
-        self._InsertState("~~~~~~~~~~~~~~~Start of round: "+str(self.round_num)+"~~~~~~~~~~~~~~~",game_state)
-        time.sleep(self.delay)
-
     def _InsertState(self,text,game_state):
         self.game_state_history.append(copy.deepcopy(game_state))
         self.move_box.insert(tkinter.END,text)
@@ -185,16 +178,27 @@ class GUIGameDisplayer(GameDisplayer):
                 tile.content = play_board.display_board.create_image(tile.x,tile.y, anchor=tkinter.NW, image=self.tile_images[tile_id])
                 play_board.display_board.update()
     
-    def _UpdateScoringLine(self,pb,index,cells):
+    def _UpdateScoringLine(self,play_board,index,cells):
         tt=0
-        for x,(t,c) in enumerate(zip(pb.scoring_board[index].tiles,cells)):
+        cc = 17 #circle center
+        cs = 10 #circle size
+
+        for x,(t,c) in enumerate(zip(play_board.scoring_board[index].tiles,cells)):
+            if not t.empty:
+                for content in t.content:
+                    play_board.display_board.delete(content)
+                t.empty = True
+
             if c != 0 and t.empty:
                 t.empty = False
                 tt = (5+x-index +1 ) % 5 - 1
                 if tt < 0:
                     tt = tt + 5
-                t.content = pb.display_board.create_image(t.x,t.y, anchor=tkinter.NW, image=self.tile_images[tt])
-                pb.display_board.update()
+                t.content = [
+                    play_board.display_board.create_image(t.x,t.y, anchor=tkinter.NW, image=self.tile_images[tt]),
+                    play_board.display_board.create_oval(t.x+cc-cs,t.y+cc-cs,t.x+cc+cs,t.y+cc+cs, fill = "lawn green")
+                ]
+                play_board.display_board.update()
     
     def _DisplayState(self,game_state):
 
@@ -225,6 +229,11 @@ class GUIGameDisplayer(GameDisplayer):
         
         self._UpdateFactory(game_state)
 
+    def StartRound(self,game_state):
+        self._DisplayState(game_state)
+        self.round_num = self.round_num +1
+        self._InsertState("~~~~~~~~~~~~~~~Start of round: "+str(self.round_num)+"~~~~~~~~~~~~~~~",game_state)
+        time.sleep(self.delay)
 
     def ExcuteMove(self,player_id,move, game_state):
 
@@ -247,7 +256,7 @@ class GUIGameDisplayer(GameDisplayer):
         time.sleep(self.delay)
 
     def TimeOutWarning(self,runner,id):
-        self._InsertState("--------------End of round-------------",runner.game_state)
+        self._InsertState("Player {} time out, {} out of {}".format(id, runner.warnings[id],runner.warning_limit),runner.game_state)
         pass
 
     
@@ -319,8 +328,8 @@ class TextGameDisplayer(GameDisplayer):
         print(PlayerToString(i, plr_state))
         print ("--------------------------------------------------------------------")
         
-    # def DisplayState(self,state):
-    #     pass
+    def TimeOutWarning(self,runner,id):
+        print ( "Player {} Time Out, {} out of {}.".format(id,runner.warnings[i],runner.warning_limit))
     
     def EndRound(self,state):
         print("ROUND HAS ENDED")

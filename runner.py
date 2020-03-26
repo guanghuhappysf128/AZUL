@@ -5,7 +5,7 @@ import sys
 import importlib
 import traceback
 import players.naive_player
-
+import random
 
 
 
@@ -51,8 +51,8 @@ if __name__ == '__main__':
 
     parser.add_option('-r', '--red', help='Red team', default='naive_player')
     parser.add_option('-b', '--blue', help='Blue team', default='naive_player')
-    parser.add_option('--red-name', help='Red team name', default='Red NaivePlayer')
-    parser.add_option('--blue-name', help='Blue team name',default='Blue NaivePlayer')
+    parser.add_option('--redName', help='Red team name', default='Red NaivePlayer')
+    parser.add_option('--blueName', help='Blue team name',default='Blue NaivePlayer')
     parser.add_option('-t','--textgraphics', action='store_true', help='Display output as text only', default=False)
 
     # parser.add_option('--quiet', action='store_true', help='Display minimal output and no graphics', default=False)
@@ -82,8 +82,8 @@ if __name__ == '__main__':
     #     args['display'] = textDisplay.NullGraphics()
     #     args['muteAgents'] = True
 
-    players_names.append(options.red_name)
-    players_names.append(options.blue_name)
+    players_names.append(options.redName)
+    players_names.append(options.blueName)
     random_seed = options.setRandomSeed
     warnning_time = options.warningTimeLimit
     num_of_warning = options.numOfWarnings
@@ -112,41 +112,45 @@ if __name__ == '__main__':
             traceback.print_exc()
             return None
 
-    # loading players
-    player_temp = loadAgent(0,options.red)
-    if player_temp != None:
-        players[0] = player_temp
-        players_names[0] = options.red
-        print ('\nRed team %s loaded' % (players_names[0]))
-    else:
-        print ('\nRed team failed to load!\n')
-
-    player_temp = loadAgent(1,options.blue)
-    if player_temp != None:
-        players[1] = player_temp
-        players_names[1] = options.blue
-        print ('\nBlue team %s loaded' % (players_names[1]))
-    else:
-        print ('\nBlue team failed to load!\n')
     
     if options.replay != None:
         print('Replaying recorded game %s.' % options.replay)
-        import pickle
-        replay = pickle.load(open(options.replay,'rb'),encoding="bytes")
+        import pickle,os
+        replay_dir = options.replay
+        replay_dir = os.path.join(options.output,replay_dir)
+        if "." not in replay_dir:
+            replay_dir +=".replay"
+        replay = pickle.load(open(replay_dir,'rb'),encoding="bytes")
         ReplayRunner(replay,displayer).Run()
 
     else: 
+        
+        # loading players
+        player_temp = loadAgent(0,options.red)
+        if player_temp != None:
+            players[0] = player_temp
+            print ('\nRed team %s loaded' % (players_names[0]))
+        else:
+            print ('\nRed team failed to load!\n')
+
+        player_temp = loadAgent(1,options.blue)
+        if player_temp != None:
+            players[1] = player_temp
+            print ('\nBlue team %s loaded' % (players_names[1]))
+        else:
+            print ('\nBlue team failed to load!\n')
+
         gr = AdvanceGameRunner(players,
-                        random_seed,
-                        warnning_time,
-                        num_of_warning,
-                        displayer,
-                        players_names)
+                        seed=random_seed,
+                        time_limit=warnning_time,
+                        warning_limit=num_of_warning,
+                        displayer=displayer,
+                        players_namelist=players_names)
         replay = gr.Run()
 
         if options.saveGameRecord:
             import datetime, pickle
-            f_name = file_path+"/replay-"+players_names[0]+'-vs-'+players_names[1]+datetime.datetime.now().strftime("%d-%b-%Y-%H-%M-%S.%f")+''
+            f_name = file_path+"/replay-"+players_names[0]+'-vs-'+players_names[1]+datetime.datetime.now().strftime("%d-%b-%Y-%H-%M-%S-%f")+'.replay'
             import os
             if not os.path.exists(file_path):
                 os.makedirs(file_path)
