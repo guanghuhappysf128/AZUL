@@ -24,6 +24,7 @@ if __name__ == '__main__':
     num_of_warning = 3
     delay = 0.1
     file_path = ""
+    games_results = [(0,0,0,0,0,0,0)]
 
     """
     The main function called when advance_model.py is run
@@ -55,16 +56,18 @@ if __name__ == '__main__':
     parser.add_option('--blueName', help='Blue team name (default: Blue NaivePlayer)',default='Blue NaivePlayer')
     parser.add_option('-t','--textgraphics', action='store_true', help='Display output as text only (default: False)', default=False)
 
-    # parser.add_option('--quiet', action='store_true', help='Display minimal output and no graphics', default=False)
-    # parser.add_option('-Q', '--super-quiet', action='store_true', dest="super_quiet", help='Same as -q but agent output is also suppressed', default=False)
+    parser.add_option('-q','--quiet', action='store_true', help='No text nor graphics output, only show game info', default=False)
+    parser.add_option('-Q', '--superQuiet', action='store_true', help='No output at all', default=False)
     parser.add_option('-w', '--warningTimeLimit', type='float',help='Time limit for a warning of one move in seconds (default: 1)', default=1)
     parser.add_option('-n', '--numOfWarnings', type='int',help='Num of warnings a team can get before fail (default: 3)', default=3)
-    parser.add_option('--setRandomSeed', type='int',help='Set the random seed (default: 90054)', default=90054)
+    parser.add_option('-m', '--multipleGames', type='int',help='Run multiple games in a roll', default=1)
+    parser.add_option('--setRandomSeed', type='int',help='Set the random seed, otherwise it will be completely random (default: 90054)', default=90054)
     parser.add_option('-s','--saveGameRecord', action='store_true', help='Writes game histories to a file (named by teams\' names and the time they were played) (default: False)', default=False)
     parser.add_option('-o','--output', help='output directory (default: output)',default='output')
     # parser.add_option('-l','--saveLog', action='store_true',help='Writes game log  to a file (named by the time they were played)', default=False)
     parser.add_option('--replay', default=None, help='Replays a recorded game file by a relative path')
-    parser.add_option('--delay', type='float', help='Delay action in a play or replay by input (float) seconds (default 0.1)', default=0.1)                      
+    parser.add_option('--delay', type='float', help='Delay action in a play or replay by input (float) seconds (default 0.1)', default=0.1)    
+                      
 
     options, otherjunk = parser.parse_args(sys.argv[1:] )
     assert len(otherjunk) == 0, "Unrecognized options: " + str(otherjunk)
@@ -74,6 +77,8 @@ if __name__ == '__main__':
     displayer = GUIGameDisplayer(options.delay)
     if options.textgraphics:
         displayer = TextGameDisplayer()
+    elif options.quiet or options.superQuiet:
+        displayer = None
     # elif options.quiet:
     #     import textDisplay
     #     args['display'] = textDisplay.NullGraphics()
@@ -103,7 +108,6 @@ if __name__ == '__main__':
             #     name += ".py"
                 
             player_file_path = 'players.'+ name
-            print(name)
             mymodule = importlib.import_module(player_file_path)
             # students need to name their player as follows
             return mymodule.myPlayer(index)
@@ -116,9 +120,9 @@ if __name__ == '__main__':
             traceback.print_exc()
             return None
 
-    
     if options.replay != None:
-        print('Replaying recorded game %s.' % options.replay)
+        if not options.superQuiet:
+            print('Replaying recorded game %s.' % options.replay)
         import pickle,os
         replay_dir = options.replay
         replay_dir = os.path.join(options.output,replay_dir)
@@ -126,41 +130,71 @@ if __name__ == '__main__':
             replay_dir +=".replay"
         replay = pickle.load(open(replay_dir,'rb'),encoding="bytes")
         ReplayRunner(replay,displayer).Run()
-
     else: 
-        
         # loading players
         player_temp = loadAgent(0,options.red)
         if player_temp != None:
             players[0] = player_temp
-            print ('\nRed team %s loaded' % (players_names[0]))
+            if not options.superQuiet:
+                print ('Red team %s loaded\n' % (players_names[0]))
         else:
             print ('\nRed team failed to load!\n')
 
         player_temp = loadAgent(1,options.blue)
         if player_temp != None:
             players[1] = player_temp
-            print ('\nBlue team %s loaded' % (players_names[1]))
+            if not options.superQuiet:
+                print ('Blue team %s loaded\n' % (players_names[1]))
         else:
             print ('\nBlue team failed to load!\n')
 
-        gr = AdvanceGameRunner(players,
-                        seed=random_seed,
-                        time_limit=warnning_time,
-                        warning_limit=num_of_warning,
-                        displayer=displayer,
-                        players_namelist=players_names)
-        replay = gr.Run()
+        for i in range(options.multipleGames):
+            if options.setRandomSeed == 90054:
+                import time
+                random_seed = int(str(time.time()).replace('.', ''))
 
-        if options.saveGameRecord:
-            import datetime, pickle
-            f_name = file_path+"/replay-"+players_names[0]+'-vs-'+players_names[1]+datetime.datetime.now().strftime("%d-%b-%Y-%H-%M-%S-%f")+'.replay'
-            import os
-            if not os.path.exists(file_path):
-                os.makedirs(file_path)
-            print("recorded\n")
-            record = pickle.dumps(replay)
-            with open(f_name,'wb') as f:
-                f.write(record)
+            gr = AdvanceGameRunner(players,
+                            seed=random_seed,
+                            time_limit=warnning_time,
+                            warning_limit=num_of_warning,
+                            displayer=displayer,
+                            players_namelist=players_names)
+            replay = gr.Run()
+
+            _,_,r_total,b_total,r_win,b_win,tie = games_results[len(games_results)-1]
+            r_score = replay[0][0]
+            b_score = replay[1][0]
+            r_total = r_total+r_score
+            b_total = b_total+b_score
+            if r_score==b_score:
+                tie =  tie + 1
+            elif r_score<b_score:
+                b_win = b_win + 1
+            else:
+                r_win = r_win + 1
+            if not options.superQuiet:
+                print("Result of game ({}/{}): Player {} earned {} points; Player {} earned {} points\n".format(i,options.multipleGames,players_names[0],r_score,players_names[1],b_score))
+            games_results.append((r_score,b_score,r_total,b_total,r_win,b_win,tie))
+
+            if options.saveGameRecord:
+                import datetime, pickle
+                f_name = file_path+"/replay-"+players_names[0]+'-vs-'+players_names[1]+datetime.datetime.now().strftime("%d-%b-%Y-%H-%M-%S-%f")+'.replay'
+                import os
+                if not os.path.exists(file_path):
+                    os.makedirs(file_path)
+                if not options.superQuiet:
+                    print("Game ({}/{}) has been recorded!\n".format(i,options.multipleGames))
+                record = pickle.dumps(replay)
+                with open(f_name,'wb') as f:
+                    f.write(record)
+        _,_,r_total,b_total,r_win,b_win,tie = games_results[len(games_results)-1]
+        r_avg = r_total//options.multipleGames
+        b_avg = b_total//options.multipleGames
+        r_win_rate = r_win // options.multipleGames *100
+        b_win_rate = b_win // options.multipleGames *100
+        if not options.superQuiet:
+            print(
+                "Over {} games: \nPlayer {} earned {:+.2f} points in average and won {} games, winning rate {:.2f}%; \nPlayer {} earned {:+.2f} points in average and won {} games, winning rate {:.2f}%; \nAnd {} games tied.".format(options.multipleGames,
+                players_names[0],r_avg,r_win,r_win_rate,players_names[1],b_avg,b_win,b_win_rate,tie))
 
 

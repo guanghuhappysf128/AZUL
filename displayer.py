@@ -278,6 +278,12 @@ class GUIGameDisplayer(GameDisplayer):
         for i,plr_state in enumerate(game_state.players):
             self._InsertState("Final score with bonus for Player {}: {}".format(i,plr_state.score),game_state)
         
+        # text display for multiple games
+        # result = "Final score with bonus for"
+        # for i,plr_state in enumerate(game_state.players):
+        #     result = result + " Player "+str(i)+": "+str(plr_state.score)+"; "
+        # print(result+"\n")
+
         self.focus = None
         def OnHistorySelect(event):
             w = event.widget
