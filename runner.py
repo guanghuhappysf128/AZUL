@@ -6,6 +6,7 @@ import importlib
 import traceback
 import players.naive_player
 import random
+import os
 
 
 
@@ -63,8 +64,8 @@ if __name__ == '__main__':
     parser.add_option('-m', '--multipleGames', type='int',help='Run multiple games in a roll', default=1)
     parser.add_option('--setRandomSeed', type='int',help='Set the random seed, otherwise it will be completely random (default: 90054)', default=90054)
     parser.add_option('-s','--saveGameRecord', action='store_true', help='Writes game histories to a file (named by teams\' names and the time they were played) (default: False)', default=False)
-    parser.add_option('-o','--output', help='output directory (default: output)',default='output')
-    # parser.add_option('-l','--saveLog', action='store_true',help='Writes game log  to a file (named by the time they were played)', default=False)
+    parser.add_option('-o','--output', help='output directory for replay and log (default: output)',default='output')
+    parser.add_option('-l','--saveLog', action='store_true',help='Writes player printed information into a log file(named by the time they were played)', default=False)
     parser.add_option('--replay', default=None, help='Replays a recorded game file by a relative path')
     parser.add_option('--delay', type='float', help='Delay action in a play or replay by input (float) seconds (default 0.1)', default=0.1)    
                       
@@ -87,6 +88,22 @@ if __name__ == '__main__':
     #     args['display'] = textDisplay.NullGraphics()
     #     args['muteAgents'] = True
 
+
+    # setting output steam
+    def blockPrint(flag,file_path,f_name):
+        if flag:
+            if not os.path.exists(file_path):
+                os.makedirs(file_path)
+            sys.stdout = open(file_path+"/log-"+f_name+".log", 'w')
+            sys.stderr = sys.stdout
+        else:
+            sys.stdout = open(os.devnull, 'w')
+            sys.stderr = sys.stdout
+
+    # Restore
+    def enablePrint():
+        sys.stdout = sys.__stdout__
+        sys.__stderr__ = sys.__stderr__
     
     players_names.append(options.redName)
     players_names.append(options.blueName)
@@ -148,6 +165,9 @@ if __name__ == '__main__':
         else:
             print ('\nBlue team failed to load!\n')
 
+        import datetime
+        f_name = players_names[0]+'-vs-'+players_names[1]+datetime.datetime.now().strftime("%d-%b-%Y-%H-%M-%S-%f")
+
         for i in range(options.multipleGames):
             if options.setRandomSeed == 90054:
                 import time
@@ -159,7 +179,13 @@ if __name__ == '__main__':
                             warning_limit=num_of_warning,
                             displayer=displayer,
                             players_namelist=players_names)
+
+            blockPrint(options.saveLog,file_path,f_name)                
             replay = gr.Run()
+            enablePrint()
+
+
+
 
             _,_,r_total,b_total,r_win,b_win,tie = games_results[len(games_results)-1]
             r_score = replay[0][0]
@@ -173,25 +199,24 @@ if __name__ == '__main__':
             else:
                 r_win = r_win + 1
             if not options.superQuiet:
-                print("Result of game ({}/{}): Player {} earned {} points; Player {} earned {} points\n".format(i,options.multipleGames,players_names[0],r_score,players_names[1],b_score))
+                print("Result of game ({}/{}): Player {} earned {} points; Player {} earned {} points\n".format(i+1,options.multipleGames,players_names[0],r_score,players_names[1],b_score))
             games_results.append((r_score,b_score,r_total,b_total,r_win,b_win,tie))
 
             if options.saveGameRecord:
-                import datetime, pickle
-                f_name = file_path+"/replay-"+players_names[0]+'-vs-'+players_names[1]+datetime.datetime.now().strftime("%d-%b-%Y-%H-%M-%S-%f")+'.replay'
-                import os
+                import pickle
+                # f_name = file_path+"/replay-"+players_names[0]+'-vs-'+players_names[1]+datetime.datetime.now().strftime("%d-%b-%Y-%H-%M-%S-%f")+'.replay'
                 if not os.path.exists(file_path):
                     os.makedirs(file_path)
                 if not options.superQuiet:
-                    print("Game ({}/{}) has been recorded!\n".format(i,options.multipleGames))
+                    print("Game ({}/{}) has been recorded!\n".format(i+1,options.multipleGames))
                 record = pickle.dumps(replay)
-                with open(f_name,'wb') as f:
+                with open(file_path+"/replay-"+f_name+".reply",'wb') as f:
                     f.write(record)
         _,_,r_total,b_total,r_win,b_win,tie = games_results[len(games_results)-1]
-        r_avg = r_total//options.multipleGames
-        b_avg = b_total//options.multipleGames
-        r_win_rate = r_win // options.multipleGames *100
-        b_win_rate = b_win // options.multipleGames *100
+        r_avg = r_total/options.multipleGames
+        b_avg = b_total/options.multipleGames
+        r_win_rate = r_win / options.multipleGames *100
+        b_win_rate = b_win / options.multipleGames *100
         if not options.superQuiet:
             print(
                 "Over {} games: \nPlayer {} earned {:+.2f} points in average and won {} games, winning rate {:.2f}%; \nPlayer {} earned {:+.2f} points in average and won {} games, winning rate {:.2f}%; \nAnd {} games tied.".format(options.multipleGames,

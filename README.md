@@ -21,9 +21,16 @@ Some information about the game:
 - https://github.com/michelleblom/AZUL
 
 # Setting up the environment
+
+Python 3 is required, and library tkinter should be installed along with python 3.
+
 The code uses three library that required to be installed: ```numpy```,```func_timeout```,```tqdm```, which can be done with the following command:
 ```bash
 pip install numpy tqdm func_timeout
+```
+If have both python 2 and python 3 installed, you might need to use following command:
+```bash
+pip3 install numpy tqdm func_timeout
 ```
 
 # How to run it?
