@@ -37,7 +37,6 @@ class GUIGameDisplayer(GameDisplayer):
         self.root.title("AZUL assignment ------ COMP90054 AI Planning for Autononmy")
 
         self.root.tk.call('wm', 'iconphoto', self.root._w, tkinter.PhotoImage(file='resources/azul_bpj_icon.png'))
-        self.root.iconbitmap("resources/azul_bpj_icon.ico")
         self.root.geometry("1300x700")
         # self.root.resizable(width=False, height=False)
 
@@ -119,6 +118,7 @@ class GUIGameDisplayer(GameDisplayer):
         self.round_num = 0
 
     def _InsertState(self,text,game_state):
+        text = text.replace("\n ","")
         self.game_state_history.append(copy.deepcopy(game_state))
         self.move_box.insert(tkinter.END,text)
         self.move_box.see(tkinter.END)
