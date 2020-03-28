@@ -36,15 +36,8 @@ class GUIGameDisplayer(GameDisplayer):
         self.center_token = True
         self.root.title("AZUL assignment ------ COMP90054 AI Planning for Autononmy")
 
-        import platform
-        if platform.system() == 'Windows':
-            self.root.iconbitmap("resources/azul_bpj_icon.ico")
-        elif platform.system() == 'Linux':
-            self.root.iconbitmap("resources/azul_bpj_icon.xmb")
-        elif platform.system == 'Mac':
-            self.root.iconbitmap("resources/azul_bpj_icon.gif")
-
-        
+        self.root.tk.call('wm', 'iconphoto', self.root._w, tkinter.PhotoImage(file='resources/azul_bpj_icon.png'))
+        self.root.iconbitmap("resources/azul_bpj_icon.ico")
         self.root.geometry("1300x700")
         # self.root.resizable(width=False, height=False)
 
