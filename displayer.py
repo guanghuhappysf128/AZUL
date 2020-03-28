@@ -3,6 +3,7 @@ import display_utils
 import tkinter
 import time
 import copy
+import os
 
 class GameDisplayer:
     def __init__(self):
@@ -34,7 +35,16 @@ class GUIGameDisplayer(GameDisplayer):
         self.root = tkinter.Tk()
         self.center_token = True
         self.root.title("AZUL assignment ------ COMP90054 AI Planning for Autononmy")
-        self.root.iconbitmap("resources/azul_bpj_icon.ico")
+
+        import platform
+        if platform.system() == 'Windows':
+            self.root.iconbitmap("resources/azul_bpj_icon.ico")
+        elif platform.system() == 'Linux':
+            self.root.iconbitmap("resources/azul_bpj_icon.xmb")
+        elif platform.system == 'Mac':
+            self.root.iconbitmap("resources/azul_bpj_icon.gif")
+
+        
         self.root.geometry("1300x700")
         # self.root.resizable(width=False, height=False)
 
