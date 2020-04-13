@@ -51,15 +51,15 @@ def blockPrint(flag,file_path,f_name):
         if not os.path.exists(file_path):
             os.makedirs(file_path)
         sys.stdout = open(file_path+"/log-"+f_name+".log", 'w')
-        sys.stderr = sys.stdout
+        #sys.stderr = sys.stdout
     else:
         sys.stdout = open(os.devnull, 'w')
-        sys.stderr = sys.stdout
+        # sys.stderr = sys.stdout
 
 # Restore
 def enablePrint():
     sys.stdout = sys.__stdout__
-    sys.__stderr__ = sys.__stderr__
+    # sys.__stderr__ = sys.__stderr__
 
 
 def run(options):
@@ -91,11 +91,13 @@ def run(options):
     if options.replay != None:
         if not options.superQuiet:
             print('Replaying recorded game %s.' % options.replay)
-        import pickle,os
+        import pickle
         replay_dir = options.replay
-        replay_dir = os.path.join(options.output,replay_dir)
-        if "." not in replay_dir:
+        # replay_dir = os.path.join(options.output,replay_dir)
+        if ".replay" not in replay_dir:
             replay_dir +=".replay"
+        if ".\\" in replay_dir:
+            replay_dir.replace(".\\","")
         replay = pickle.load(open(replay_dir,'rb'),encoding="bytes")
         ReplayRunner(replay,displayer).Run()
     else: 
@@ -135,16 +137,19 @@ def run(options):
             if not options.superQuiet:
                 print("Result of game ({}/{}): Player {} earned {} points; Player {} earned {} points\n".format(i+1,options.multipleGames,players_names[0],r_score,players_names[1],b_score))
             games_results.append((r_score,b_score,r_total,b_total,r_win,b_win,tie))
-
+            print(options.saveGameRecord)
+            print(options.superQuiet)
             if options.saveGameRecord:
+                print("get in")
                 import pickle
                 # f_name = file_path+"/replay-"+players_names[0]+'-vs-'+players_names[1]+datetime.datetime.now().strftime("%d-%b-%Y-%H-%M-%S-%f")+'.replay'
                 if not os.path.exists(file_path):
                     os.makedirs(file_path)
+                print(options.superQuiet)
                 if not options.superQuiet:
                     print("Game ({}/{}) has been recorded!\n".format(i+1,options.multipleGames))
                 record = pickle.dumps(replay)
-                with open(file_path+"/replay-"+f_name+".reply",'wb') as f:
+                with open(file_path+"/replay-"+f_name+".replay",'wb') as f:
                     f.write(record)
         _,_,r_total,b_total,r_win,b_win,tie = games_results[len(games_results)-1]
         r_avg = r_total/options.multipleGames
