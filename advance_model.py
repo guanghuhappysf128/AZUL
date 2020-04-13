@@ -17,7 +17,11 @@ import time
     
 class AdvanceGameRunner:
     def __init__(self, player_list, seed=1, time_limit=1, warning_limit=3, displayer = None, players_namelist = ["Alice","Bob"]):
-        random.seed(seed)
+        
+        self.seed = seed
+        random.seed(self.seed)
+        self.seed_list = [random.randint(0,1e10) for _ in range(1000)]
+        self.seed_idx = 0
 
         # Make sure we are forming a valid game, and that player
         # id's range from 0 to N-1, where N is the number of players.
@@ -32,7 +36,6 @@ class AdvanceGameRunner:
         self.game_state = GameState(len(player_list))
         self.players = player_list
         self.players_namelist = players_namelist
-        self.seed = seed
         self.time_limit = time_limit
         self.warning_limit = warning_limit
         self.warnings = [0]*len(player_list)
@@ -94,7 +97,8 @@ class AdvanceGameRunner:
                     
                     
                 assert(ValidMove(selected, moves))
-                
+                random.seed(self.seed_list[self.seed_idx])
+                self.seed_idx += 1
                 self.game_state.ExecuteMove(i, selected)
 
                 if self.displayer is not None:
@@ -110,7 +114,6 @@ class AdvanceGameRunner:
 
             # It is the end of round
             self.game_state.ExecuteEndOfRound()
-
             if self.displayer is not None:
                 self.displayer.EndRound(self.game_state)
 
@@ -161,7 +164,11 @@ class ReplayRunner:
     def __init__(self,replay, displayer = None):
         self.replay = replay
                     
-        random.seed(self.replay["seed"])
+        self.seed = self.replay["seed"]
+        random.seed(self.seed)
+        self.seed_list = [random.randint(0,1e10) for _ in range(1000)]
+        self.seed_idx = 0
+
         self.player_num = self.replay["player_num"]
         self.players_namelist = replay["players_namelist"]
         self.warning_limit = replay["warning_limit"]
@@ -172,6 +179,7 @@ class ReplayRunner:
         self.displayer = displayer
         if self.displayer is not None:
             self.displayer.InitDisplayer(self)
+            
   
     def Run(self):
         player_order = []
@@ -190,6 +198,7 @@ class ReplayRunner:
         round_count = 0
         move_count = 0
         
+        
         while game_continuing:
             for i in player_order:
 
@@ -202,13 +211,16 @@ class ReplayRunner:
                         self.game_state.players[i].score = -1
                         if self.displayer is not None:
                             self.displayer.EndGame(self.game_state)
-                        return 
+                        return self.displayer
 
                 plr_state = self.game_state.players[i]
                 moves = plr_state.GetAvailableMoves(self.game_state)
                 selected = self.replay[i][1].moves[round_count][move_count]
-                assert(ValidMove(selected, moves))
                 
+                
+                assert(ValidMove(selected, moves))
+                random.seed(self.seed_list[self.seed_idx])
+                self.seed_idx += 1
                 self.game_state.ExecuteMove(i, selected)
 
                 if self.displayer is not None:
@@ -261,5 +273,5 @@ class ReplayRunner:
             self.displayer.EndGame(self.game_state)
             
         # Return scores
-        return 
+        return self.displayer
    

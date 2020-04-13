@@ -24,7 +24,7 @@ class GameDisplayer:
     def EndRound(self,game_state):
         pass
     
-    def EndGame(self):
+    def EndGame(self,game_state):
         pass
 
 class GUIGameDisplayer(GameDisplayer):
@@ -138,7 +138,6 @@ class GUIGameDisplayer(GameDisplayer):
             num = tkinter.Label(tf,textvariable=self.ft_num[index][j],borderwidth=4,relief=tkinter.SUNKEN)
             num.grid(row=2,column=0)
 
-
     def _UpdateFactory(self,game_state):
         inuses = [False] * 6
 
@@ -168,7 +167,6 @@ class GUIGameDisplayer(GameDisplayer):
             self.cf_board.factory_displayer.config(highlightbackground="red")
         else:
             self.cf_board.factory_displayer.config(highlightbackground="black")
-
 
     def _UpdateLine(self,tile_num,play_board,line_id,tile_id):
 
@@ -265,7 +263,6 @@ class GUIGameDisplayer(GameDisplayer):
         else:
             self.move_box.itemconfig(tkinter.END, {'bg':'blue','fg':'yellow'})
         pass
-
     
     def EndRound(self,game_state):
         self.center_token = True
@@ -353,3 +350,30 @@ class TextGameDisplayer(GameDisplayer):
         print ("--------------------------------------------------------------------")
         for plr_state in game_state.players:
             print ("Score for Player {}: {}".format(plr_state.id,plr_state.score))
+
+
+
+class RecordGameDisplayer(GameDisplayer):
+    def __init__(self):
+        self.game_states = []
+        pass
+    
+    def InitDisplayer(self,runner):
+        pass
+            
+    def ExcuteMove(self,i,move,game_state):
+        self.game_states.append((i,copy.deepcopy(game_state)))
+        pass
+
+    def TimeOutWarning(self,runner,id):
+        pass
+
+    def StartRound(self,game_state):
+        self.game_states.append((-1,copy.deepcopy(game_state)))
+        pass
+    
+    def EndRound(self,game_state):
+        pass
+    
+    def EndGame(self,game_state):
+        pass
