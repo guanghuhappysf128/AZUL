@@ -7,6 +7,7 @@ import traceback
 import players.naive_player
 import random
 import os
+import pickle
 
 players_names = []
 players = [players.naive_player.myPlayer(0), players.naive_player.myPlayer(1)]
@@ -45,21 +46,29 @@ def loadAgent(file_list,name_list):
             print ('\n[Error] Player {} team {} agent {} loaded\n'.format(i,name_list[i],file_list[i]))
 
 
-# setting output steam
-def blockPrint(flag,file_path,f_name):
-    if flag:
-        if not os.path.exists(file_path):
-            os.makedirs(file_path)
-        sys.stdout = open(file_path+"/log-"+f_name+".log", 'w')
-        sys.stderr = sys.stdout
-    else:
-        sys.stdout = open(os.devnull, 'w')
-        sys.stderr = sys.stdout
+class HidePrint:
+    # setting output steam
+    def __init__(self,flag,file_path,f_name):
+        self.flag = flag
+        self.file_path = file_path
+        self.f_name = f_name
+        self._original_stdout = sys.stdout
 
-# Restore
-def enablePrint():
-    sys.stdout = sys.__stdout__
-    sys.__stderr__ = sys.__stderr__
+    def __enter__(self):
+        if self.flag:
+            if not os.path.exists(self.file_path):
+                os.makedirs(self.file_path)
+            sys.stdout = open(self.file_path+"/log-"+self.f_name+".log", 'w')
+            sys.stderr = sys.stdout
+        else:
+            sys.stdout = open(os.devnull, 'w')
+            sys.stderr = sys.stdout
+
+    # Restore
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout.close()
+        sys.stdout = self._original_stdout
+        sys.stderr = sys.stdout
 
 
 def run(options):
@@ -91,7 +100,6 @@ def run(options):
     if options.replay != None:
         if not options.superQuiet:
             print('Replaying recorded game %s.' % options.replay)
-        import pickle,os
         replay_dir = options.replay
         replay_dir = os.path.join(options.output,replay_dir)
         if "." not in replay_dir:
@@ -116,10 +124,9 @@ def run(options):
                             warning_limit=num_of_warning,
                             displayer=displayer,
                             players_namelist=players_names)
-
-            blockPrint(options.saveLog,file_path,f_name)                
-            replay = gr.Run()
-            enablePrint()
+            print(file_path)
+            with HidePrint(options.saveLog,file_path,f_name):                
+                replay = gr.Run()
 
             _,_,r_total,b_total,r_win,b_win,tie = games_results[len(games_results)-1]
             r_score = replay[0][0]
@@ -137,7 +144,6 @@ def run(options):
             games_results.append((r_score,b_score,r_total,b_total,r_win,b_win,tie))
 
             if options.saveGameRecord:
-                import pickle
                 # f_name = file_path+"/replay-"+players_names[0]+'-vs-'+players_names[1]+datetime.datetime.now().strftime("%d-%b-%Y-%H-%M-%S-%f")+'.replay'
                 if not os.path.exists(file_path):
                     os.makedirs(file_path)
