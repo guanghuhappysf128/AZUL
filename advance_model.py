@@ -13,10 +13,27 @@ from displayer import *
 from func_timeout import func_timeout, FunctionTimedOut
 import time
 
+class AdvancePlayer(Player):
+    def __init__(self, _id):
+        super().__init__(_id)
+
+    def StartRound(self,game_state):
+        return None
+
+    def SelectMove(self, moves, game_state):
+        return random.choice(moves)
 
     
 class AdvanceGameRunner:
-    def __init__(self, player_list, seed=1, time_limit=1, warning_limit=3, displayer = None, players_namelist = ["Alice","Bob"]):
+    def __init__(self, 
+                 player_list, 
+                 seed=1, 
+                 time_limit=1, 
+                 warning_limit=3, 
+                 startRound_time_limit = 1,
+                 startRound_warning_limit = 1,
+                 displayer = None, 
+                 players_namelist = ["Alice","Bob"]):
         
         self.seed = seed
         random.seed(self.seed)
@@ -36,10 +53,17 @@ class AdvanceGameRunner:
         self.game_state = GameState(len(player_list))
         self.players = player_list
         self.players_namelist = players_namelist
+
         self.time_limit = time_limit
         self.warning_limit = warning_limit
         self.warnings = [0]*len(player_list)
         self.warning_positions = []
+
+        self.startRound_time_limit = startRound_time_limit
+        self.startRound_warning_limit = startRound_warning_limit
+        self.startRound_warnings = [0]*len(player_list)
+        self.startRound_warning_positions = []
+
         self.displayer = displayer
         
         if self.displayer is not None:
@@ -54,14 +78,25 @@ class AdvanceGameRunner:
             player_order.append(i)
  
         game_continuing = True
+        round_count = 0
+        move_count = 0
+        
         for plr in self.game_state.players:
             plr.player_trace.StartRound()
+
+        for i in player_order:
+            gs_copy = copy.deepcopy(self.game_state)
+            try:
+                func_timeout(self.startRound_time_limit,self.players[i].StartRound,args=(gs_copy))
+            except FunctionTimedOut:
+                self.startRound_warnings[i] += 1
+
+
+
 
         if self.displayer is not None:
             self.displayer.StartRound(self.game_state)
             
-        round_count = 0
-        move_count = 0
 
         while game_continuing:
             for i in player_order:

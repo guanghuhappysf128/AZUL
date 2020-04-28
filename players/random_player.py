@@ -1,11 +1,11 @@
 
-from model import *
+from advance_model import *
 from utils import *
 
 import time
 import random
 
-class myPlayer(Player):
+class myPlayer(AdvancePlayer):
     def __init__(self,_id):
         super().__init__(_id)
     

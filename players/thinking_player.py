@@ -1,10 +1,10 @@
 
-from model import *
+from advance_model import *
 from utils import *
 
 import time
 
-class myPlayer(Player):
+class myPlayer(AdvancePlayer):
     def __init__(self,_id,thinking_time = 1):
         self.thinking_time = thinking_time
         super().__init__(_id)

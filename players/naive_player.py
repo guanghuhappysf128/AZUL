@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
-from model import *
+from advance_model import *
 from utils import *
 
-class myPlayer(Player):
+class myPlayer(AdvancePlayer):
     def __init__(self, _id):
         super().__init__(_id)
 
