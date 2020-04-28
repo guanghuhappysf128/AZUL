@@ -29,9 +29,8 @@ class AdvanceGameRunner:
                  player_list, 
                  seed=1, 
                  time_limit=1, 
-                 warning_limit=3, 
                  startRound_time_limit = 1,
-                 startRound_warning_limit = 1,
+                 warning_limit=3, 
                  displayer = None, 
                  players_namelist = ["Alice","Bob"]):
         
@@ -55,19 +54,37 @@ class AdvanceGameRunner:
         self.players_namelist = players_namelist
 
         self.time_limit = time_limit
+        self.startRound_time_limit = startRound_time_limit
         self.warning_limit = warning_limit
         self.warnings = [0]*len(player_list)
         self.warning_positions = []
-
-        self.startRound_time_limit = startRound_time_limit
-        self.startRound_warning_limit = startRound_warning_limit
-        self.startRound_warnings = [0]*len(player_list)
-        self.startRound_warning_positions = []
 
         self.displayer = displayer
         
         if self.displayer is not None:
             self.displayer.InitDisplayer(self)
+
+    def _EndGame(self,player_order,isTimeOut = True, id = None):
+        player_traces = {"seed":self.seed,
+                        "player_num":len(player_order),
+                        "players_namelist":self.players_namelist,
+                        "warning_positions":self.warning_positions,
+                        "warning_limit":self.warning_limit}
+        
+        if isTimeOut:
+            player_traces.update({id:[0, plr_state.player_trace] for id,plr_state in enumerate(self.game_state.players)})
+            player_traces[id][0] = -1
+            self.game_state.players[id].score = -1
+        else:
+            for i in player_order:
+                plr_state = self.game_state.players[i]
+                plr_state.EndOfGameScore()
+                player_traces[i] = (plr_state.score, plr_state.player_trace)
+    
+        if self.displayer is not None:
+            self.displayer.EndGame(self.game_state)
+
+        return player_traces
 
     def Run(self):
         player_order = []
@@ -87,16 +104,25 @@ class AdvanceGameRunner:
         for i in player_order:
             gs_copy = copy.deepcopy(self.game_state)
             try:
-                func_timeout(self.startRound_time_limit,self.players[i].StartRound,args=(gs_copy))
+                func_timeout(self.startRound_time_limit,self.players[i].StartRound,args=(gs_copy,))
             except FunctionTimedOut:
-                self.startRound_warnings[i] += 1
+                self.warnings[i] += 1
+                if self.displayer is not None:
+                    self.displayer.TimeOutWarning(self,i)
+                self.warning_positions.append((i,round_count,-1))
 
+                if self.warnings[i] == self.warning_limit:
+                    player_traces = self._EndGame(player_order,isTimeOut=True,id=i)
+                    return player_traces
 
-
+            except AttributeError:
+                pass
+                    
+        random.seed(self.seed_list[self.seed_idx])
+        self.seed_idx += 1
 
         if self.displayer is not None:
             self.displayer.StartRound(self.game_state)
-            
 
         while game_continuing:
             for i in player_order:
@@ -116,19 +142,11 @@ class AdvanceGameRunner:
                     self.warning_positions.append((i,round_count,move_count))
 
                     if self.warnings[i] == self.warning_limit:
-                        player_traces = {"seed":self.seed,
-                                         "player_num":len(player_order),
-                                         "players_namelist":self.players_namelist,
-                                         "warning_positions":self.warning_positions,
-                                         "warning_limit":self.warning_limit}
-                        player_traces.update({id:[0, plr_state.player_trace] for id,plr_state in enumerate(self.game_state.players)})
-                        player_traces[i][0] = -1
-                        self.game_state.players[i].score = -1
-                        if self.displayer is not None:
-                            self.displayer.EndGame(self.game_state)
+                        player_traces = self._EndGame(player_order,isTimeOut=True,id=i)
                         return player_traces
                     
                     selected = random.choice(moves)
+
                     
                     
                 assert(ValidMove(selected, moves))
@@ -172,24 +190,31 @@ class AdvanceGameRunner:
 
                 for i in range(0, self.game_state.first_player):
                     player_order.append(i)
-                
+
+                for i in player_order:
+                    gs_copy = copy.deepcopy(self.game_state)
+                    try:
+                        func_timeout(self.startRound_time_limit,self.players[i].StartRound,args=(gs_copy,))
+                    except FunctionTimedOut:
+                        self.warnings[i] += 1
+                        if self.displayer is not None:
+                            self.displayer.TimeOutWarning(self,i)
+                        self.warning_positions.append((i,round_count,-1))
+
+                        if self.warnings[i] == self.warning_limit:
+                            player_traces = self._EndGame(player_order,isTimeOut=True,id=i)
+                            return player_traces
+                    except AttributeError:
+                        pass
+                                    
+                random.seed(self.seed_list[self.seed_idx])
+                self.seed_idx += 1
+
                 if self.displayer is not None:
                     self.displayer.StartRound(self.game_state)
 
         # Score player bonuses
-        player_traces = {"seed":self.seed,
-                         "player_num":len(player_order),
-                         "players_namelist":self.players_namelist,
-                         "warning_positions":self.warning_positions,
-                         "warning_limit":self.warning_limit}
-
-        for i in player_order:
-            plr_state = self.game_state.players[i]
-            plr_state.EndOfGameScore()
-            player_traces[i] = (plr_state.score, plr_state.player_trace)
-    
-        if self.displayer is not None:
-            self.displayer.EndGame(self.game_state)
+        player_traces = self._EndGame(player_order,isTimeOut=False)
             
         # Return scores
         return player_traces
@@ -228,11 +253,26 @@ class ReplayRunner:
         for plr in self.game_state.players:
             plr.player_trace.StartRound()
             
-        if self.displayer is not None:
-            self.displayer.StartRound(self.game_state)
         round_count = 0
         move_count = 0
-        
+
+        for i in player_order:
+            if (i,round_count,-1) in self.warning_positions:
+                self.warnings[i]+=1
+                if self.displayer is not None:
+                    self.displayer.TimeOutWarning(self,i)
+
+                if self.warnings[i] == self.warning_limit:                        
+                    self.game_state.players[i].score = -1
+                    if self.displayer is not None:
+                        self.displayer.EndGame(self.game_state)
+                    return self.displayer
+
+        random.seed(self.seed_list[self.seed_idx])
+        self.seed_idx += 1
+
+        if self.displayer is not None:
+            self.displayer.StartRound(self.game_state)
         
         while game_continuing:
             for i in player_order:
@@ -293,7 +333,22 @@ class ReplayRunner:
                     player_order.append(i)
 
                 for i in range(0, self.game_state.first_player):
-                    player_order.append(i)
+                    player_order.append(i)        
+                    
+                for i in player_order:
+                    if (i,round_count,-1) in self.warning_positions:
+                        self.warnings[i]+=1
+                        if self.displayer is not None:
+                            self.displayer.TimeOutWarning(self,i)
+
+                        if self.warnings[i] == self.warning_limit:                        
+                            self.game_state.players[i].score = -1
+                            if self.displayer is not None:
+                                self.displayer.EndGame(self.game_state)
+                            return self.displayer
+                            
+                random.seed(self.seed_list[self.seed_idx])
+                self.seed_idx += 1
 
                 if self.displayer is not None:
                     self.displayer.StartRound(self.game_state)
