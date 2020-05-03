@@ -94,6 +94,7 @@ def run(options):
 
     random_seed = options.setRandomSeed
     warnning_time = options.warningTimeLimit
+    startRound_warning_time = options.startRoundWarningTimeLimit
     num_of_warning = options.numOfWarnings
     file_path = options.output
 
@@ -121,6 +122,7 @@ def run(options):
             gr = AdvanceGameRunner(players,
                             seed=random_seed,
                             time_limit=warnning_time,
+                            startRound_time_limit = startRound_warning_time,
                             warning_limit=num_of_warning,
                             displayer=displayer,
                             players_namelist=players_names)
@@ -186,6 +188,7 @@ def loadParameter():
     parser.add_option('-q','--quiet', action='store_true', help='No text nor graphics output, only show game info', default=False)
     parser.add_option('-Q', '--superQuiet', action='store_true', help='No output at all', default=False)
     parser.add_option('-w', '--warningTimeLimit', type='float',help='Time limit for a warning of one move in seconds (default: 1)', default=1.0)
+    parser.add_option('--startRoundWarningTimeLimit', type='float',help='Time limit for a warning of initialization for each round in seconds (default: 1)', default=1.0)
     parser.add_option('-n', '--numOfWarnings', type='int',help='Num of warnings a team can get before fail (default: 3)', default=3)
     parser.add_option('-m', '--multipleGames', type='int',help='Run multiple games in a roll', default=1)
     parser.add_option('--setRandomSeed', type='int',help='Set the random seed, otherwise it will be completely random (default: 90054)', default=90054)

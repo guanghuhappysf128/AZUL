@@ -15,5 +15,5 @@ class myPlayer(AdvancePlayer):
         return None
 
     def SelectMove(self,moves,game_state):
-        time.sleep(self.thinking_time)
+        #time.sleep(self.thinking_time)
         return moves[0]
