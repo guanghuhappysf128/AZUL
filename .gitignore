@@ -5,3 +5,6 @@ replays/
 output/
 morePlayers/
 test.ipynb
+teams/
+results/
+competition.py
