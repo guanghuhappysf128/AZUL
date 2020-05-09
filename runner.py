@@ -2,48 +2,59 @@ from advance_model import AdvanceGameRunner, ReplayRunner
 from displayer import TextGameDisplayer,GUIGameDisplayer
 from utils import *
 import sys
+import os
 import importlib
 import traceback
-import players.random_player
-import random
-import os
+import datetime
+import time
 import pickle
+import random
+import players.random_player as random_player
+from optparse import OptionParser
 
-players_names = []
-players = [players.random_player.myPlayer(0), players.random_player.myPlayer(1)]
-random_seed = 90054
-warnning_time = 1
-num_of_warning = 3
-delay = 0.1
-file_path = ""
-games_results = [(0,0,0,0,0,0,0)]
+#players_names = [None] *2
+#players = [players.random_player.myPlayer(0), players.random_player.myPlayer(1)]
+#random_seed = 90054
+#warnning_time = 1
+#num_of_warning = 3
+#delay = 0.1
+#file_path = ""
+#games_results = [(0,0,0,0,0,0,0)]
+idx2rb = ["teamRed","teamBlue"]
 
-
-def loadAgent(file_list,name_list):
-    for i,file in enumerate(file_list):
+def loadAgent(file_list,name_list,superQuiet = True):
+    players = [None] * 2
+    load_errs = {}
+    for i,player_file_path in enumerate(file_list):
         player_temp = None
         try:
             # if not name.endswith(".py"):
             #     name += ".py"
                 
-            player_file_path = 'players.'+ file
+            #player_file_path = 'players.'+ file
+            #print (player_file_path)
             mymodule = importlib.import_module(player_file_path)
             # students need to name their player as follows
             player_temp = mymodule.myPlayer(i)
         except (NameError, ImportError):
-            print('Error: The team "' + player_file_path + '" could not be loaded! ', file=sys.stderr)
-            traceback.print_exc()
+            #print('Error: The team "' + player_file_path + '" could not be loaded! ', file=sys.stderr)
+            #traceback.print_exc()
+            pass
 
         except IOError:
-            print('Error: The team "' + player_file_path + '" could not be loaded! ', file=sys.stderr)
-            traceback.print_exc()
+            #print('Error: The team "' + player_file_path + '" could not be loaded! ', file=sys.stderr)
+            #traceback.print_exc()
+            pass
 
         if player_temp != None:
             players[i] = player_temp
-            if not options.superQuiet:
+            if not superQuiet:
                 print ('Player {} team {} agent {} loaded'.format(i,name_list[i],file_list[i]))
         else:
-            print ('\n[Error] Player {} team {} agent {} loaded\n'.format(i,name_list[i],file_list[i]))
+            players[i] = random_player.myPlayer(i)
+            #print ('\n[Error] Player {} team {} agent {} cannot be loaded\n'.format(i,name_list[i],file_list[i]))
+            load_errs[idx2rb[i]] = '[Error] Player {} team {} agent {} cannot be loaded'.format(i,name_list[i],".".join((file_list[i]).split(".")[-2:]))
+    return players, load_errs
 
 
 class HidePrint:
@@ -80,8 +91,7 @@ def run(options):
     elif options.quiet or options.superQuiet:
         displayer = None
 
-    players_names.append(options.redName)
-    players_names.append(options.blueName)
+    players_names = [options.redName, options.blueName] 
     for i in range(2):
         players_names[i] = players_names[i].replace(" ","_")
 
@@ -98,18 +108,31 @@ def run(options):
         replay_dir = os.path.join(options.output,replay_dir)
         if "." not in replay_dir:
             replay_dir +=".replay"
+        if ".\\" in replay_dir:
+            replay_dir.replace(".\\","")
         replay = pickle.load(open(replay_dir,'rb'),encoding="bytes")
         ReplayRunner(replay,displayer).Run()
     else: 
+        games_results = [(0,0,0,0,0,0,0)]
         for i in range(options.multipleGames):
             # loading players
-            loadAgent([options.red,options.blue],players_names)
+            players,load_errs = loadAgent([options.red,options.blue],players_names,superQuiet= options.superQuiet)
+            is_load_err = False
+            for i,err in load_errs.items():
+                if not options.superQuiet:
+                    print (i,err)
+                is_load_err = True
 
-            import datetime
-            f_name = players_names[0]+'-vs-'+players_names[1]+datetime.datetime.now().strftime("%d-%b-%Y-%H-%M-%S-%f")
+            if is_load_err:
+                results = {}
+                results["options"] = options
+                results["load_errs"] = load_errs
+                return results                
+
+
+            f_name = players_names[0]+'-vs-'+players_names[1]+"-"+datetime.datetime.now().strftime("%d-%b-%Y-%H-%M-%S-%f")
             
             if options.setRandomSeed == 90054:
-                import time
                 random_seed = int(str(time.time()).replace('.', ''))
 
             gr = AdvanceGameRunner(players,
@@ -119,7 +142,6 @@ def run(options):
                             warning_limit=num_of_warning,
                             displayer=displayer,
                             players_namelist=players_names)
-            print(file_path)
             with HidePrint(options.saveLog,file_path,f_name):                
                 replay = gr.Run()
 
@@ -145,7 +167,7 @@ def run(options):
                 if not options.superQuiet:
                     print("Game ({}/{}) has been recorded!\n".format(i+1,options.multipleGames))
                 record = pickle.dumps(replay)
-                with open(file_path+"/replay-"+f_name+".reply",'wb') as f:
+                with open(file_path+"/replay-"+f_name+".replay",'wb') as f:
                     f.write(record)
         _,_,r_total,b_total,r_win,b_win,tie = games_results[len(games_results)-1]
         r_avg = r_total/options.multipleGames
@@ -157,13 +179,28 @@ def run(options):
                 "Over {} games: \nPlayer {} earned {:+.2f} points in average and won {} games, winning rate {:.2f}%; \nPlayer {} earned {:+.2f} points in average and won {} games, winning rate {:.2f}%; \nAnd {} games tied.".format(options.multipleGames,
                 players_names[0],r_avg,r_win,r_win_rate,players_names[1],b_avg,b_win,b_win_rate,tie))
 
+        results = {}
+        results["r_avg"] = r_avg
+        results["b_avg"] = b_avg
+        results["r_win"] = r_win
+        results["b_win"] = b_win
+        results["r_win_rate"] = r_win_rate
+        results["b_win_rate"] = b_win_rate
+        results["r_name"] = players_names[0]
+        results["b_name"] = players_names[1]
+        results["fileName"] = f_name
+        results["options"] = options
+        results["load_errs"] = load_errs
+        results["tie"] = tie
+
+        return results
+
 
 def loadParameter():
 
     """
     Processes the command used to run Azul from the command line.
     """
-    from optparse import OptionParser
     usageStr = """
     USAGE:      python runner.py <options>
     EXAMPLES:   (1) python runner.py
