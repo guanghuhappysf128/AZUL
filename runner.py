@@ -4,13 +4,13 @@ from utils import *
 import sys
 import importlib
 import traceback
-import players.naive_player
+import players.random_player
 import random
 import os
 import pickle
 
 players_names = []
-players = [players.naive_player.myPlayer(0), players.naive_player.myPlayer(1)]
+players = [players.random_player.myPlayer(0), players.random_player.myPlayer(1)]
 random_seed = 90054
 warnning_time = 1
 num_of_warning = 3
@@ -79,13 +79,6 @@ def run(options):
         displayer = TextGameDisplayer()
     elif options.quiet or options.superQuiet:
         displayer = None
-    # elif options.quiet:
-    #     import textDisplay
-    #     args['display'] = textDisplay.NullGraphics()
-    # elif options.super_quiet:
-    #     import textDisplay
-    #     args['display'] = textDisplay.NullGraphics()
-    #     args['muteAgents'] = True
 
     players_names.append(options.redName)
     players_names.append(options.blueName)
