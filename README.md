@@ -33,6 +33,15 @@ If have both python 2 and python 3 installed, you might need to use following co
 pip3 install numpy tqdm func_timeout
 ```
 
+In some OS, such as Ubuntu 18.04, tk is not pre-installed, you might get a mistake such as:
+```
+ModuleNotFoundError: No module named 'tkinter'
+```
+It can be fixed with:
+```bash
+sudo apt-get install python3-tk
+```
+
 # How to run it?
 
 The code example can be run with command:
