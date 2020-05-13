@@ -37,6 +37,7 @@ def loadAgent(file_list,name_list,superQuiet = True):
             # students need to name their player as follows
             player_temp = mymodule.myPlayer(i)
         except (NameError, ImportError):
+
             #print('Error: The team "' + player_file_path + '" could not be loaded! ', file=sys.stderr)
             #traceback.print_exc()
             pass
@@ -44,6 +45,8 @@ def loadAgent(file_list,name_list,superQuiet = True):
         except IOError:
             #print('Error: The team "' + player_file_path + '" could not be loaded! ', file=sys.stderr)
             #traceback.print_exc()
+            pass
+        except:
             pass
 
         if player_temp != None:
@@ -95,7 +98,15 @@ def run(options):
     for i in range(2):
         players_names[i] = players_names[i].replace(" ","_")
 
-    random_seed = options.setRandomSeed
+
+    if options.setRandomSeed == 90054:
+        random_seed = int(str(time.time()).replace('.', ''))
+    else:
+        random_seed = options.setRandomSeed
+    random.seed(random_seed)
+    seed_list = [random.randint(0,1e10) for _ in range(1000)]
+    seed_idx = 0
+
     warnning_time = options.warningTimeLimit
     startRound_warning_time = options.startRoundWarningTimeLimit
     num_of_warning = options.numOfWarnings
@@ -122,6 +133,9 @@ def run(options):
                 if not options.superQuiet:
                     print (i,err)
                 is_load_err = True
+        
+            random_seed=seed_list[seed_idx]
+            seed_idx += 1
 
             if is_load_err:
                 results = {}
@@ -132,8 +146,6 @@ def run(options):
 
             f_name = players_names[0]+'-vs-'+players_names[1]+"-"+datetime.datetime.now().strftime("%d-%b-%Y-%H-%M-%S-%f")
             
-            if options.setRandomSeed == 90054:
-                random_seed = int(str(time.time()).replace('.', ''))
 
             gr = AdvanceGameRunner(players,
                             seed=random_seed,
